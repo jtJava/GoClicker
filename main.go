@@ -1,9 +1,7 @@
 package main
 
 import (
-	"AutoClicker/windows"
-	"github.com/moutend/go-hook/pkg/mouse"
-	"github.com/moutend/go-hook/pkg/types"
+	"github.com/gonutz/w32"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -18,15 +16,19 @@ var timeUntilClickable time.Time
 var firstClickDelay time.Time
 
 func main() {
-	go click()
 	go randomizeChances()
+	go monitorToggle()
+	go monitorLeftButton()
 
-	registerHooks()
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+
+	click()
 }
 
 func click() {
 	for {
-		time.Sleep(1 * 1000 * 1000)
+		time.Sleep(1 * time.Millisecond)
 		now := time.Now()
 		if isMinecraftFocused() && toggled && pressed && now.After(timeUntilClickable) && now.After(firstClickDelay) {
 			if !firstClick {
@@ -64,52 +66,59 @@ func getDelay() uint8 {
 }
 
 func mouseUp() {
-	windows.PostMessage(windows.GetForegroundWindow(), 0x0202, 0, 0)
+	w32.PostMessage(w32.GetForegroundWindow(), 0x0202, 0, 0)
 }
 
 func mouseDown() {
-	windows.PostMessage(windows.GetForegroundWindow(), 0x0201, 1, 0)
-}
-
-func registerHooks() {
-	// Buffer size is depends on your need. The 100 is placeholder value.
-	mouseChan := make(chan types.MouseEvent, 100)
-
-	if err := mouse.Install(nil, mouseChan); err != nil {
-		return
-	}
-
-	defer mouse.Uninstall()
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-
-	/*
-	 * 513 = Left Down
-	 * 514 = Left Up
-	 * 519 = Scroll Wheel Down
-	 */
-	for {
-		m := <-mouseChan
-		if m.Message == 513 {
-			pressed = true
-			firstClick = true
-			firstClickDelay = time.Now().Add(50 * 1000 * 1000)
-		} else if m.Message == 514 {
-			pressed = false
-		} else if m.Message == 519 {
-			toggled = !toggled
-		}
-	}
+	w32.PostMessage(w32.GetForegroundWindow(), 0x0201, 1, 0)
 }
 
 func tryChance(chance uint8) bool {
 	return uint8(rand.Intn(101-0)+0) <= chance
 }
 
-// Skidded from Fyu
 func isMinecraftFocused() bool {
-	focusWindow := windows.GetForegroundWindow()
-	windowName := windows.GetClassNameW(focusWindow)
+	focusWindow := w32.GetForegroundWindow()
+	windowName, _ := w32.GetClassName(focusWindow)
 	return windowName == "LWJGL" || windowName == "GLFW30"
+}
+
+func monitorLeftButton() {
+	/*
+	 * 0x01 = Left Mouse Button
+	 * 0x04 = Middle Mouse Button
+	 * 32768 = SHORT (Pressed)
+	 * 0 = SHORT (Not Pressed)
+	 */
+	for {
+		time.Sleep(1 * time.Millisecond)
+		state := w32.GetAsyncKeyState(0x01) == 32768
+
+		if state == pressed {
+			continue
+		}
+
+		if state {
+			pressed = true
+			firstClick = true
+			firstClickDelay = time.Now().Add(50 * time.Millisecond)
+		} else {
+			pressed = false
+		}
+	}
+}
+
+func monitorToggle() {
+	/*
+	 * 0x04 = Middle Mouse Button
+	 * 32768 = SHORT (Pressed)
+	 * 0 = SHORT (Not Pressed)
+	 */
+	for {
+		skip := w32.GetAsyncKeyState(0x04)&0x1 == 0
+		if !skip {
+			toggled = !toggled
+			println(toggled)
+		}
+	}
 }

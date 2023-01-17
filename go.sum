@@ -1,4 +1,2 @@
-github.com/AllenDang/w32 v0.0.0-20180428130237-ad0a36d80adc h1:w3fW4b1hPf6/cfdQQ/vu9V8eBeQmuLZIaUMj81nIzYQ=
-github.com/AllenDang/w32 v0.0.0-20180428130237-ad0a36d80adc/go.mod h1:1rHKulT5eD2DzdKxDXUZRKtBfkTzLmTL42ZmEmOfyrs=
-github.com/moutend/go-hook v0.1.0 h1:8jGA7zxtcNmiFrHf+KAGpSBbU99fyY9DS1s38MOBJQU=
-github.com/moutend/go-hook v0.1.0/go.mod h1:rGHmQESfHpsztJ6jbDoaiCgesGdZttObFlY/ksHIlY4=
+github.com/gonutz/w32 v1.0.0 h1:3t1z6ZfkFvirjFYBx9pHeHBuKoN/VBVk9yHb/m2Ll/k=
+github.com/gonutz/w32 v1.0.0/go.mod h1:Rc/YP5K9gv0FW4p6X9qL3E7Y56lfMflEol1fLElfMW4=
